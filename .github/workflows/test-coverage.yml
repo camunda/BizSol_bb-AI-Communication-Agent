@@ -1,4 +1,4 @@
-name: Test withCoverage
+name: Test with Coverage
 
 on:
   pull_request:
@@ -31,7 +31,11 @@ jobs:
       with:
         script: |
           const fs = require('fs');
-          const path = require('path');
+          
+          // Read coverage thresholds from pom.xml (single source of truth)
+          const pomContent = fs.readFileSync('pom.xml', 'utf8');
+          const unitMin = Math.round(parseFloat(pomContent.match(/<unittest\.coverage\.min>([\d.]+)/)?.[1] || '0.80') * 100);
+          const cptMin = Math.round(parseFloat(pomContent.match(/<cpt\.coverage\.min>([\d.]+)/)?.[1] || '0.60') * 100);
           
           let comment = '## Test Coverage Report\n\n';
           
@@ -43,7 +47,7 @@ jobs:
             if (match) {
               const coverage = parseInt(match[1]);
               comment += `### Java Code Coverage: ${coverage}%\n`;
-              comment += coverage >= 80 ? '✅ Meets minimum requirement (80%)\n\n' : '❌ Below minimum requirement (80%)\n\n';
+              comment += coverage >= unitMin ? `✅ Meets minimum requirement (${unitMin}%)\n\n` : `❌ Below minimum requirement (${unitMin}%)\n\n`;
             }
           }
           
@@ -55,7 +59,7 @@ jobs:
               const processCoverage = (report.coverages[0].coverage * 100).toFixed(1);
               const processId = report.coverages[0].processDefinitionId;
               comment += `### Process Test Coverage (${processId}): ${processCoverage}%\n`;
-              comment += processCoverage >= 60 ? '✅ Meets minimum requirement (60%)\n\n' : '❌ Below minimum requirement (60%)\n\n';
+              comment += processCoverage >= cptMin ? `✅ Meets minimum requirement (${cptMin}%)\n\n` : `❌ Below minimum requirement (${cptMin}%)\n\n`;
             }
           }
           
