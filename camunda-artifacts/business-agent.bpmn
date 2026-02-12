@@ -27,13 +27,13 @@
             <bpmn:extensionElements>
                 <zeebe:ioMapping>
                     <zeebe:input source="bedrock" target="provider.type"/>
-                    <zeebe:input source="" target="provider.bedrock.region"/>
+                    <zeebe:input source="{{secrets.IDP_AWS_REGION}}" target="provider.bedrock.region"/>
                     <zeebe:input source="credentials" target="provider.bedrock.authentication.type"/>
-                    <zeebe:input source=""
+                    <zeebe:input source="{{secrets.CAMUNDAAGENT_AWS_ACCESS_KEY}}"
                                  target="provider.bedrock.authentication.accessKey"/>
-                    <zeebe:input source=""
+                    <zeebe:input source="{{secrets.CAMUNDAAGENT_AWS_SECRET_KEY}}"
                                  target="provider.bedrock.authentication.secretKey"/>
-                    <zeebe:input source=""
+                    <zeebe:input source="anthropic.claude-3-5-sonnet-20240620-v1:0"
                                  target="provider.bedrock.model.model"/>
                     <zeebe:input source="=5000" target="provider.bedrock.model.parameters.maxTokens"/>
                     <zeebe:input source="=0.2" target="provider.bedrock.model.parameters.temperature"/>
