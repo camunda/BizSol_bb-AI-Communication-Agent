@@ -63,7 +63,7 @@ public class InboundIT {
     }
 
     @Test
-    public void incomingEmailShouldBeProcessed() throws InterruptedException {
+    public void incomingEmailShouldBeProcessed() {
         // setup
         client.newDeployResourceCommand()
                 .addResourceFromClasspath("message-receiver.bpmn")

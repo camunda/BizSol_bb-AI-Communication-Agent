@@ -28,7 +28,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class ReceiveMessageTest {
 
     private static final String PROCESS_DEFINITION_ID = "message-receiver";
-    public static final String EMAIL_INBOUND_MESSAGE_NAME = "306ec9c5-911d-4979-b781-1f6b5fc741ad";
 
     @Autowired
     private CamundaClient client;
