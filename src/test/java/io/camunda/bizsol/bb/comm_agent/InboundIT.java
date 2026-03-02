@@ -1,5 +1,6 @@
 package io.camunda.bizsol.bb.comm_agent;
 
+import static io.camunda.bizsol.bb.comm_agent.util.BpmnFile.Replace.replace;
 import static io.camunda.process.test.api.CamundaAssert.assertThatProcessInstance;
 import static io.camunda.process.test.api.assertions.ProcessInstanceSelectors.byProcessId;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -9,10 +10,13 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.camunda.bizsol.bb.comm_agent.models.Attachment;
 import io.camunda.bizsol.bb.comm_agent.models.EmailCommunicationContext;
 import io.camunda.bizsol.bb.comm_agent.models.SupportCase;
-import io.camunda.bizsol.bb.comm_agent.testutil.EmailTestUtil;
+import io.camunda.bizsol.bb.comm_agent.util.BpmnFile;
+import io.camunda.bizsol.bb.comm_agent.util.EmailTestUtil;
 import io.camunda.client.CamundaClient;
 import io.camunda.process.test.api.CamundaProcessTestContext;
 import io.camunda.process.test.api.CamundaSpringProcessTest;
+import io.camunda.zeebe.model.bpmn.BpmnModelInstance;
+import java.io.FileNotFoundException;
 import java.time.LocalDateTime;
 import java.util.Collections;
 import org.assertj.core.api.recursive.comparison.RecursiveComparisonConfiguration;
@@ -21,6 +25,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
+import org.springframework.util.ResourceUtils;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.junit.jupiter.Container;
@@ -33,6 +38,7 @@ import org.testcontainers.utility.DockerImageName;
 public class InboundIT {
 
     private static final String PROCESS_DEFINITION_ID = "message-receiver";
+    private static final String MESSAGE_RECEIVE_FILE = "camunda-artifacts/message-receiver.bpmn";
     private static final String SEND_MESSAGE_CONNECTOR_ELEMENT_ID =
             "Event_SendCustomerCommunicationReceived";
     private static final int GREENMAIL_IMAP_PORT = 3143;
@@ -72,10 +78,53 @@ public class InboundIT {
     }
 
     @Test
-    public void incomingEmailShouldBeProcessed() throws InterruptedException {
+    public void incomingEmailShouldBeProcessed()
+            throws InterruptedException, FileNotFoundException {
         // setup
+        BpmnModelInstance messageReceiveModel =
+                BpmnFile.replace(
+                        ResourceUtils.getFile(MESSAGE_RECEIVE_FILE),
+                        // Add none start event
+                        replace(
+                                "</bpmn:process>",
+                                """
+                                            <bpmn:startEvent id="Event_1jp0lym">
+                                              <bpmn:outgoing>Flow_1f517si</bpmn:outgoing>
+                                            </bpmn:startEvent>
+                                            <bpmn:sequenceFlow id="Flow_1f517si" sourceRef="Event_1jp0lym" targetRef="Gateway_0zc209k" />
+                                          </bpmn:process>
+                                        """),
+                        // Add email connector settings
+                        replace(
+                                """
+                                        <zeebe:property name="authentication.username" value="" />
+                                        """,
+                                """
+                                        <zeebe:property name="authentication.username" value="{{secrets.INBOUND_IMAP_USERNAME}}" />
+                                        """),
+                        replace(
+                                """
+                                         <zeebe:property name="authentication.password" value="" />
+                                         """,
+                                """
+                                         <zeebe:property name="authentication.password" value="{{secrets.INBOUND_IMAP_PASSWORD}}" />
+                                         """),
+                        replace(
+                                """
+                                        <zeebe:property name="data.imapConfig.imapHost" value="" />
+                                        """,
+                                """
+                                        <zeebe:property name="data.imapConfig.imapHost" value="{{secrets.INBOUND_IMAP_SERVER}}" />
+                                        """),
+                        replace(
+                                """
+                                        <zeebe:property name="data.imapConfig.imapPort" value="" />
+                                        """,
+                                """
+                                        <zeebe:property name="data.imapConfig.imapPort" value="{{secrets.INBOUND_IMAP_PORT}}" />
+                                        """));
         client.newDeployResourceCommand()
-                .addResourceFromClasspath("message-receiver.bpmn")
+                .addProcessModel(messageReceiveModel, MESSAGE_RECEIVE_FILE)
                 .addResourceFromClasspath("case-matching.bpmn")
                 .send()
                 .join();
@@ -124,7 +173,7 @@ public class InboundIT {
                         "correlationKey",
                         JsonNode.class,
                         correlationKey -> {
-                            assertThat(correlationKey.asText()).isEqualTo(TEST_MESSAGE_ID);
+                            assertThat(correlationKey.asText()).isEqualTo(TEST_EMAIL_ADDRESS);
                         })
                 .hasLocalVariableSatisfies(
                         SEND_MESSAGE_CONNECTOR_ELEMENT_ID,

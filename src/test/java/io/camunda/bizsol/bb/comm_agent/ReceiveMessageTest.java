@@ -1,5 +1,6 @@
 package io.camunda.bizsol.bb.comm_agent;
 
+import static io.camunda.bizsol.bb.comm_agent.util.BpmnFile.Replace.replace;
 import static io.camunda.process.test.api.CamundaAssert.assertThat;
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -7,10 +8,13 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.camunda.bizsol.bb.comm_agent.models.EmailCommunicationContext;
 import io.camunda.bizsol.bb.comm_agent.models.SupportCase;
+import io.camunda.bizsol.bb.comm_agent.util.BpmnFile;
 import io.camunda.client.CamundaClient;
 import io.camunda.client.api.response.ProcessInstanceEvent;
 import io.camunda.process.test.api.CamundaProcessTestContext;
 import io.camunda.process.test.api.CamundaSpringProcessTest;
+import io.camunda.zeebe.model.bpmn.BpmnModelInstance;
+import java.io.FileNotFoundException;
 import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.Map;
@@ -18,6 +22,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.util.ResourceUtils;
 
 @SpringBootTest(
         properties = {
@@ -27,6 +32,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 public class ReceiveMessageTest {
 
     private static final String PROCESS_DEFINITION_ID = "message-receiver";
+    private static final String MESSAGE_RECEIVE_FILE = "camunda-artifacts/message-receiver.bpmn";
     private static final String SEND_MESSAGE_CONNECTOR_ELEMENT_ID =
             "Event_SendCustomerCommunicationReceived";
 
@@ -36,7 +42,8 @@ public class ReceiveMessageTest {
 
     @Test
     @DisplayName("Should send BPMN message with support case and correlationKey")
-    void shouldSendBpmnMessageWithSupportCaseVariablesAndCorrelationKey() {
+    void shouldSendBpmnMessageWithSupportCaseVariablesAndCorrelationKey()
+            throws FileNotFoundException {
         // given
         var supportCase =
                 SupportCase.builder()
@@ -52,8 +59,21 @@ public class ReceiveMessageTest {
                         .build();
 
         // given: the processes are deployed
+        BpmnModelInstance messageReceiveModel =
+                BpmnFile.replace(
+                        ResourceUtils.getFile(MESSAGE_RECEIVE_FILE),
+                        // Add none start event
+                        replace(
+                                "</bpmn:process>",
+                                """
+                                            <bpmn:startEvent id="Event_1jp0lym">
+                                              <bpmn:outgoing>Flow_1f517si</bpmn:outgoing>
+                                            </bpmn:startEvent>
+                                            <bpmn:sequenceFlow id="Flow_1f517si" sourceRef="Event_1jp0lym" targetRef="Gateway_0zc209k" />
+                                          </bpmn:process>
+                                        """));
         client.newDeployResourceCommand()
-                .addResourceFromClasspath("message-receiver.bpmn")
+                .addProcessModel(messageReceiveModel, MESSAGE_RECEIVE_FILE)
                 .send()
                 .join();
 

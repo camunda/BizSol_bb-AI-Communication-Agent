@@ -1,4 +1,4 @@
-package io.camunda.bizsol.bb.comm_agent.testutil;
+package io.camunda.bizsol.bb.comm_agent.util;
 
 import jakarta.mail.Message;
 import jakarta.mail.MessagingException;

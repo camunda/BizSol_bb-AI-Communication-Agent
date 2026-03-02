@@ -9,10 +9,10 @@
         <zeebe:properties>
           <zeebe:property name="inbound.type" value="io.camunda:connector-email-inbound:1" />
           <zeebe:property name="authentication.type" value="simple" />
-          <zeebe:property name="authentication.username" value="{{secrets.INBOUND_IMAP_USERNAME}}" />
-          <zeebe:property name="authentication.password" value="{{secrets.INBOUND_IMAP_PASSWORD}}" />
-          <zeebe:property name="data.imapConfig.imapHost" value="{{secrets.INBOUND_IMAP_SERVER}}" />
-          <zeebe:property name="data.imapConfig.imapPort" value="{{secrets.INBOUND_IMAP_PORT}}" />
+          <zeebe:property name="authentication.username" value="" />
+          <zeebe:property name="authentication.password" value="" />
+          <zeebe:property name="data.imapConfig.imapHost" value="" />
+          <zeebe:property name="data.imapConfig.imapPort" value="" />
           <zeebe:property name="data.imapConfig.imapCryptographicProtocol" value="NONE" />
           <zeebe:property name="data.pollingWaitTime" value="PT1S" />
           <zeebe:property name="data.pollingConfigDiscriminator" value="unseenPollingConfig" />
@@ -87,10 +87,6 @@
       <bpmn:messageEventDefinition id="MessageEventDefinition_1f048s1" />
     </bpmn:endEvent>
     <bpmn:sequenceFlow id="Flow_1azfio8" sourceRef="Activity_1rmhfza" targetRef="Event_SendCustomerCommunicationReceived" />
-    <bpmn:startEvent id="Event_1jp0lym">
-      <bpmn:outgoing>Flow_1f517si</bpmn:outgoing>
-    </bpmn:startEvent>
-    <bpmn:sequenceFlow id="Flow_1f517si" sourceRef="Event_1jp0lym" targetRef="Gateway_0zc209k" />
   </bpmn:process>
   <bpmn:message id="Message_1b7rezg" name="f77394ea-a2a5-4455-8c15-97a3004874c4" zeebe:modelerTemplate="io.camunda.connectors.webhook.WebhookConnectorStartMessage.v1">
     <bpmn:extensionElements />
