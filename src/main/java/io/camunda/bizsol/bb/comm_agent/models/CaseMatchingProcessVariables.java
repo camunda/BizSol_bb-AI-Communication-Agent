@@ -9,7 +9,7 @@ import lombok.ToString;
 @Setter
 @ToString
 @NoArgsConstructor
-public class ProcessVariables {
-    private ObjectA a;
-    private String concatenatedResult;
+public class CaseMatchingProcessVariables {
+    private SupportCase supportCase;
+    private String correlationKey;
 }

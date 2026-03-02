@@ -14,7 +14,7 @@ import io.camunda.process.test.api.CamundaSpringProcessTest;
 import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.Map;
-import java.util.UUID;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -27,13 +27,16 @@ import org.springframework.boot.test.context.SpringBootTest;
 public class ReceiveMessageTest {
 
     private static final String PROCESS_DEFINITION_ID = "message-receiver";
+    private static final String SEND_MESSAGE_CONNECTOR_ELEMENT_ID =
+            "Event_SendCustomerCommunicationReceived";
 
     @Autowired private CamundaClient client;
     @Autowired private CamundaProcessTestContext processTestContext;
     @Autowired private ObjectMapper objectMapper;
 
     @Test
-    void shouldSendBpmnMessageWithSupportCaseVariables() {
+    @DisplayName("Should send BPMN message with support case and correlationKey")
+    void shouldSendBpmnMessageWithSupportCaseVariablesAndCorrelationKey() {
         // given
         var supportCase =
                 SupportCase.builder()
@@ -54,6 +57,11 @@ public class ReceiveMessageTest {
                 .send()
                 .join();
 
+        // and: mock case-matching sub-process
+        final String correlationKeyValue = "correlationKeyValue";
+        processTestContext.mockChildProcess(
+                "case-matching", Map.of("correlationKey", correlationKeyValue));
+
         // when
         final ProcessInstanceEvent processInstance =
                 client.newCreateInstanceCommand()
@@ -66,9 +74,9 @@ public class ReceiveMessageTest {
         // then
         assertThat(processInstance)
                 .isCompleted()
-                .hasCompletedElements("Task_SendBPMNMessage")
+                .hasCompletedElements(SEND_MESSAGE_CONNECTOR_ELEMENT_ID)
                 .hasLocalVariableSatisfies(
-                        "Task_SendBPMNMessage",
+                        SEND_MESSAGE_CONNECTOR_ELEMENT_ID,
                         "variables",
                         JsonNode.class,
                         variables -> {
@@ -81,21 +89,18 @@ public class ReceiveMessageTest {
 
         assertThat(processInstance)
                 .hasLocalVariableSatisfies(
-                        "Task_SendBPMNMessage",
+                        SEND_MESSAGE_CONNECTOR_ELEMENT_ID,
                         "messageName",
                         String.class,
                         messageName ->
-                                assertThat(messageName)
-                                        .isEqualTo("UnmatchedCommunicationReceived"));
+                                assertThat(messageName).isEqualTo("CustomerCommunicationReceived"));
 
         assertThat(processInstance)
                 .hasLocalVariableSatisfies(
-                        "Task_SendBPMNMessage",
+                        SEND_MESSAGE_CONNECTOR_ELEMENT_ID,
                         "correlationKey",
                         String.class,
                         correlationKey ->
-                                assertThat(UUID.fromString(correlationKey).toString())
-                                        .withFailMessage("Invalid UUID")
-                                        .isEqualTo(correlationKey));
+                                assertThat(correlationKey).isEqualTo(correlationKeyValue));
     }
 }

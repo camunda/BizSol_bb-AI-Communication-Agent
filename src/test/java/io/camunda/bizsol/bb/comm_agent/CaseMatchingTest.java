@@ -15,6 +15,7 @@ import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -40,7 +41,8 @@ public class CaseMatchingTest {
     }
 
     @Test
-    void shouldUseEmailAddressAsCorrelationKeyAndMessageName() {
+    @DisplayName("FEEL: Use email address as correlationKey")
+    void shouldUseEmailAddressAsCorrelationKey() {
         // given
         SupportCase supportCase =
                 SupportCase.builder()
@@ -56,27 +58,21 @@ public class CaseMatchingTest {
                         .build();
 
         // when
-        publishStartMessage(supportCase);
+        startWithMessage(supportCase, true);
 
         // then
         assertThatProcessInstance(byProcessId(PROCESS_DEFINITION_ID))
                 .isCompleted()
-                .hasCompletedElements("Event_SendCustomerCommunicationReceived")
-                .hasLocalVariableSatisfies(
-                        "Event_SendCustomerCommunicationReceived",
+                .hasVariableSatisfies(
                         "correlationKey",
                         String.class,
                         correlationKey ->
-                                assertThat(correlationKey).isEqualTo("customer@camunda.com"))
-                .hasLocalVariableSatisfies(
-                        "Event_SendCustomerCommunicationReceived",
-                        "messageName",
-                        String.class,
-                        messageName -> assertThat(messageName).isEqualTo(EXPECTED_MESSAGE_NAME));
+                                assertThat(correlationKey).isEqualTo("customer@camunda.com"));
     }
 
     @Test
-    void shouldUsePhoneNumberAsCorrelationKeyAndMessageName() {
+    @DisplayName("FEEL: Use phone number as correlationKey")
+    void shouldUsePhoneNumberAsCorrelationKey() {
         // given
         SupportCase supportCase =
                 SupportCase.builder()
@@ -92,27 +88,20 @@ public class CaseMatchingTest {
                         .build();
 
         // when
-        publishStartMessage(supportCase);
+        startWithMessage(supportCase, true);
 
         // then
         assertThatProcessInstance(byProcessId(PROCESS_DEFINITION_ID))
                 .isCompleted()
-                .hasCompletedElements("Event_SendCustomerCommunicationReceived")
-                .hasLocalVariableSatisfies(
-                        "Event_SendCustomerCommunicationReceived",
+                .hasVariableSatisfies(
                         "correlationKey",
                         String.class,
-                        correlationKey -> assertThat(correlationKey).isEqualTo("+1-202-555-0183"))
-                .hasLocalVariableSatisfies(
-                        "Event_SendCustomerCommunicationReceived",
-                        "messageName",
-                        String.class,
-                        messageName ->
-                                assertThat(messageName).isEqualTo("CustomerCommunicationReceived"));
+                        correlationKey -> assertThat(correlationKey).isEqualTo("+1-202-555-0183"));
     }
 
     @Test
-    void shouldUseConversationIdAsCorrelationKeyAndMessageName() {
+    @DisplayName("Worker: Use result from worker as correlationKey")
+    void shouldSatisfyCorrelationKey() {
         // given
         SupportCase supportCase =
                 SupportCase.builder()
@@ -122,33 +111,28 @@ public class CaseMatchingTest {
                         .attachments(Collections.emptyList())
                         .communicationContext(new MyCommunicationContext(CUSTOM_CONVERSATION_ID))
                         .build();
+        processTestContext
+                .mockJobWorker("CaseMatching")
+                .thenComplete(Map.of("correlationKey", CUSTOM_CONVERSATION_ID));
 
         // when
-        publishStartMessage(supportCase);
+        startWithMessage(supportCase, true);
 
         // then
         assertThatProcessInstance(byProcessId(PROCESS_DEFINITION_ID))
                 .isCompleted()
-                .hasCompletedElements("Event_SendCustomerCommunicationReceived")
-                .hasLocalVariableSatisfies(
-                        "Event_SendCustomerCommunicationReceived",
+                .hasVariableSatisfies(
                         "correlationKey",
                         String.class,
                         correlationKey ->
-                                assertThat(correlationKey).isEqualTo(CUSTOM_CONVERSATION_ID))
-                .hasLocalVariableSatisfies(
-                        "Event_SendCustomerCommunicationReceived",
-                        "messageName",
-                        String.class,
-                        messageName ->
-                                assertThat(messageName).isEqualTo("CustomerCommunicationReceived"));
+                                assertThat(correlationKey).isEqualTo(CUSTOM_CONVERSATION_ID));
     }
 
-    private void publishStartMessage(SupportCase supportCase) {
-        client.newPublishMessageCommand()
-                .messageName(START_MESSAGE_NAME)
-                .correlationKey(supportCase.communicationContext().conversationId())
-                .variables(Map.of("supportCase", supportCase))
+    private void startWithMessage(SupportCase supportCase, boolean useFeel) {
+        client.newCreateInstanceCommand()
+                .bpmnProcessId(PROCESS_DEFINITION_ID)
+                .latestVersion()
+                .variables(Map.of("supportCase", supportCase, "use_feel", useFeel))
                 .send()
                 .join();
     }

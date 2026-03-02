@@ -32,7 +32,9 @@ import org.testcontainers.utility.DockerImageName;
 @Testcontainers
 public class InboundIT {
 
-    private static final String CASE_MATCHING_PROCESS_DEFINITION_ID = "case-matching";
+    private static final String PROCESS_DEFINITION_ID = "message-receiver";
+    private static final String SEND_MESSAGE_CONNECTOR_ELEMENT_ID =
+            "Event_SendCustomerCommunicationReceived";
     private static final int GREENMAIL_IMAP_PORT = 3143;
     private static final int GREENMAIL_SMTP_PORT = 3025;
     private static final String GREENMAIL_USERNAME = "node";
@@ -114,19 +116,26 @@ public class InboundIT {
                         .build();
 
         // then
-        assertThatProcessInstance(byProcessId(CASE_MATCHING_PROCESS_DEFINITION_ID))
+        assertThatProcessInstance(byProcessId(PROCESS_DEFINITION_ID))
                 .isCompleted()
-                .hasCompletedElements("Event_SendCustomerCommunicationReceived")
+                .hasCompletedElements(SEND_MESSAGE_CONNECTOR_ELEMENT_ID)
                 .hasLocalVariableSatisfies(
-                        "Event_SendCustomerCommunicationReceived",
+                        SEND_MESSAGE_CONNECTOR_ELEMENT_ID,
                         "correlationKey",
                         JsonNode.class,
                         correlationKey -> {
-                            assertThat(correlationKey.asText())
-                                    .isEqualTo(expectedCommunicationChannel.emailAddress());
+                            assertThat(correlationKey.asText()).isEqualTo(TEST_MESSAGE_ID);
                         })
                 .hasLocalVariableSatisfies(
-                        "Event_SendCustomerCommunicationReceived",
+                        SEND_MESSAGE_CONNECTOR_ELEMENT_ID,
+                        "messageName",
+                        JsonNode.class,
+                        messageName -> {
+                            assertThat(messageName.asText())
+                                    .isEqualTo("CustomerCommunicationReceived");
+                        })
+                .hasLocalVariableSatisfies(
+                        SEND_MESSAGE_CONNECTOR_ELEMENT_ID,
                         "variables",
                         JsonNode.class,
                         variables -> {
