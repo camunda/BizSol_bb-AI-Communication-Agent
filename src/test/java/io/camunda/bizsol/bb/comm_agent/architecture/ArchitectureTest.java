@@ -32,6 +32,7 @@ class ArchitectureTest {
                         "..workers..",
                         "..services..",
                         "..models..",
+                        "lombok..",
                         "java..",
                         "org.springframework..",
                         "io.camunda..",
