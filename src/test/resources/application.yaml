@@ -1,12 +1,13 @@
 spring:
   ai:
     openai:
-      base-url: http://localhost:8080
-      api-key: "dummy"
+      base-url: https://api.openai.com/v1/
+      api-key: <secret>
       chat:
         options:
-          model: model
-          stream-usage: true
+          model: gpt-5-mini-2025-08-07
+          temperature: 1.0
+
 camunda:
   process-test:
     # Switch from a managed to a remote runtime
