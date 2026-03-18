@@ -17,7 +17,6 @@ import io.camunda.process.test.api.CamundaProcessTestContext;
 import io.camunda.process.test.api.CamundaSpringProcessTest;
 import io.camunda.zeebe.model.bpmn.BpmnModelInstance;
 import java.io.FileNotFoundException;
-import java.io.IOException;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.Collections;
@@ -37,8 +36,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
-import org.springframework.test.context.DynamicPropertyRegistry;
-import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.util.ResourceUtils;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
@@ -54,8 +51,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 public class CommunicationAgentIT {
     private static final String OPEN_AI_API_BASEURL = "https://api.openai.com";
     private static final String OPEN_AI_API_ENDPOINT = OPEN_AI_API_BASEURL + "/v1/";
-    private static final String OPEN_AI_API_KEY =
-            "<secret>";
+    private static final String OPEN_AI_API_KEY = "<secret>";
     private static final String LLM_MODEL = "gpt-5-mini-2025-08-07";
     private static final String COMMUNICATION_AGENT_RECEIVE_FILE =
             "camunda-artifacts/communication-agent.bpmn";
@@ -127,7 +123,7 @@ public class CommunicationAgentIT {
                                         """
                                         .stripLeading(),
                                 """
-                                        <zeebe:input source="{{secrets.LLM_OPENAI_API_ENDPOINT}}" target="provider.openaiCompatible.endpoint" />
+                                        <zeebe:input source="{{secrets.GITHUB_TOKEN}}" target="provider.openaiCompatible.endpoint" />
                                         """
                                         .stripLeading()),
                         replace(
@@ -144,7 +140,7 @@ public class CommunicationAgentIT {
                                         <zeebe:input source="" target="provider.openaiCompatible.authentication.apiKey" />"""
                                         .stripLeading(),
                                 """
-                                        <zeebe:input source="{{secrets.LLM_OPENAI_API_KEY}}" target="provider.openaiCompatible.authentication.apiKey" />"""
+                                        <zeebe:input source="https://models.github.ai/inference" target="provider.openaiCompatible.authentication.apiKey" />"""
                                         .stripLeading()));
         client.newDeployResourceCommand()
                 .addProcessModel(communicationAgentModel, COMMUNICATION_AGENT_RECEIVE_FILE)
@@ -356,23 +352,6 @@ public class CommunicationAgentIT {
                 new EvaluationRequest(expectedCustomerIntent, List.of(), actualCustomerIntent);
         EvaluationResponse response = evaluator.evaluate(request);
         assertThat(response.isPass()).describedAs(response.getFeedback()).isTrue();
-    }
-
-    @DynamicPropertySource
-    static void configureProperties(DynamicPropertyRegistry registry)
-            throws IOException, InterruptedException {
-        // Camunda connector secrets
-        registry.add(
-                "camunda.process-test.connectors-secrets.LLM_OPENAI_API_ENDPOINT",
-                () -> OPEN_AI_API_ENDPOINT);
-        registry.add(
-                "camunda.process-test.connectors-secrets.LLM_OPENAI_API_KEY",
-                () -> OPEN_AI_API_KEY);
-        registry.add("camunda.process-test.connectors-secrets.LLM_MODEL", () -> LLM_MODEL);
-        // Spring AI settings for evaluations
-        registry.add("spring.ai.openai.base-url", () -> OPEN_AI_API_BASEURL);
-        registry.add("spring.ai.openai.api-key", () -> OPEN_AI_API_KEY);
-        registry.add("spring.ai.openai.chat.options.model", () -> LLM_MODEL);
     }
 
     @TestConfiguration

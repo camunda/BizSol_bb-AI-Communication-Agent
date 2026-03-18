@@ -1,8 +1,9 @@
 spring:
   ai:
-    openai:
-      base-url: https://api.openai.com/v1/
-      api-key: <secret>
+    openai-sdk:
+      base-url: https://models.github.ai/inference
+      api-key: ${GITHUB_TOKEN:empty}
+      git-hub-models: true
       chat:
         options:
           model: gpt-5-mini-2025-08-07
@@ -10,23 +11,15 @@ spring:
 
 camunda:
   process-test:
-    # Switch from a managed to a remote runtime
-    # runtime-mode: remote
-    # Change the connection (default: Camunda 8 Run)
     camunda-docker-image-version: 8.8.8
-    remote:
-      camunda-monitoring-api-address: http://localhost:9600
-      connectors-rest-api-address: http://localhost:8086
-      client:
-        rest-address: http://localhost:8088
-        grpc-address: http://localhost:26500
     connectors-enabled: true
-    #connectors-docker-image-name: camunda/connectors-bundle
     camunda-env-vars:
       CAMUNDA_LOG_LEVEL: DEBUG      # global log level for io.camunda
       ZEEBE_LOG_LEVEL: DEBUG        # Zeebe package level
       ES_LOG_LEVEL: DEBUG           # Elasticsearch logs
     connectors-docker-image-version: 8.8.8
+    connectors-secrets:
+      LLM_MODEL: gpt-5-mini-2025-08-07
   # (optional) Connectors container logging
   connectors-env-vars:
     LOGGING_LEVEL_IO_CAMUNDA_CONNECTOR: DEBUG
