@@ -70,7 +70,13 @@
         <dependency>
             <groupId>io.camunda</groupId>
             <artifactId>camunda-spring-boot-starter</artifactId>
-            <version>8.8.0</version>
+            <version>8.9.0-rc1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>io.camunda.connector</groupId>
+            <artifactId>connector-runtime-spring</artifactId>
+            <version>8.9.0-alpha5</version>
         </dependency>
 
         <!-- Testing -->
@@ -83,7 +89,7 @@
         <dependency>
             <groupId>io.camunda</groupId>
             <artifactId>camunda-process-test-spring</artifactId>
-            <version>8.8.0</version>
+            <version>8.9.0-rc1</version>
             <scope>test</scope>
         </dependency>
 
@@ -153,6 +159,17 @@
             <groupId>org.apache.groovy</groupId>
             <artifactId>groovy-ant</artifactId>
         </dependency>
+
+        <!-- DuckDB JDBC -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-jdbc</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.duckdb</groupId>
+            <artifactId>duckdb_jdbc</artifactId>
+            <version>1.2.0</version>
+        </dependency>
     </dependencies>
 
     <build>
@@ -214,7 +231,7 @@
                         <goals>
                             <goal>check</goal>
                         </goals>
-                        <phase>compile</phase>
+                        <phase>verify</phase>
                     </execution>
                 </executions>
             </plugin>
