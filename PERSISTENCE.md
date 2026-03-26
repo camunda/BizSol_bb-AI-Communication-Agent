@@ -142,7 +142,7 @@ Overwrites the payload of an existing record. Fails with an incident if `id` is 
 
 Removes a record by `id`. Silently succeeds if the id does not exist.
 
-**Returns:** `duckDbResult = null`, `duckDbResults = null`.
+**Returns:** `duckDbResult = null`.
 
 ```xml
 <zeebe:taskDefinition type="DuckDb" />

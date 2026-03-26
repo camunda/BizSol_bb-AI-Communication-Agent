@@ -5,23 +5,29 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.camunda.bizsol.bb.comm_agent.models.DuckDbResult;
 import io.camunda.bizsol.bb.comm_agent.models.DuckDbVariables;
 import io.camunda.bizsol.bb.comm_agent.services.DuckDbService;
-import io.camunda.client.annotation.JobWorker;
-import io.camunda.client.annotation.VariablesAsType;
+import io.camunda.connector.api.annotation.OutboundConnector;
+import io.camunda.connector.api.outbound.OutboundConnectorContext;
+import io.camunda.connector.api.outbound.OutboundConnectorFunction;
 import org.springframework.stereotype.Component;
 
+@OutboundConnector(
+        name = "DuckDb",
+        inputVariables = {"operation", "id", "payload"},
+        type = "DuckDb")
 @Component
-public class DuckDbWorker {
+public class DuckDbConnector implements OutboundConnectorFunction {
 
     private final DuckDbService duckDbService;
     private final ObjectMapper objectMapper;
 
-    public DuckDbWorker(DuckDbService duckDbService, ObjectMapper objectMapper) {
+    public DuckDbConnector(DuckDbService duckDbService, ObjectMapper objectMapper) {
         this.duckDbService = duckDbService;
         this.objectMapper = objectMapper;
     }
 
-    @JobWorker(type = "DuckDb")
-    public DuckDbResult execute(@VariablesAsType DuckDbVariables variables) {
+    @Override
+    public Object execute(OutboundConnectorContext context) {
+        var variables = context.bindVariables(DuckDbVariables.class);
         return switch (variables.operation().toUpperCase()) {
             case "CREATE" ->
                     new DuckDbResult(

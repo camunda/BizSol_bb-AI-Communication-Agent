@@ -34,6 +34,7 @@ class ArchitectureTest {
                         "..models..",
                         "lombok..",
                         "java..",
+                        "com.fasterxml.jackson..",
                         "org.springframework..",
                         "io.camunda..",
                         "org.slf4j..")
@@ -51,6 +52,7 @@ class ArchitectureTest {
                         "..services..",
                         "..models..",
                         "java..",
+                        "com.fasterxml.jackson..",
                         "org.springframework..",
                         "org.slf4j..")
                 .check(classes);
