@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" xmlns:dmndi="https://www.omg.org/spec/DMN/20191111/DMNDI/" xmlns:dc="http://www.omg.org/spec/DMN/20180521/DC/" xmlns:modeler="http://camunda.org/schema/modeler/1.0" xmlns:biodi="http://bpmn.io/schema/dmn/biodi/2.0" id="Definitions_1ljjm0y" name="DRD" namespace="http://camunda.org/schema/1.0/dmn" exporter="Camunda Modeler" exporterVersion="5.44.0" modeler:executionPlatform="Camunda Cloud" modeler:executionPlatformVersion="8.9.0">
+  <decision id="customer-database" name="Customer database matching">
+    <decisionTable id="DecisionTable_0mbyfnr" hitPolicy="FIRST">
+      <input id="Input_1" label="lookupKey">
+        <inputExpression id="InputExpression_1" typeRef="string">
+          <text>lookupKey</text>
+        </inputExpression>
+      </input>
+      <output id="Output_1" label="id" name="id" typeRef="string" biodi:width="192" />
+      <output id="OutputClause_1lqz34b" label="name" name="name" typeRef="string" />
+      <output id="OutputClause_0qdtz1o" label="availableChannels" name="availableChannels" typeRef="string" />
+      <output id="OutputClause_1c1cpeb" label="contactEmail" name="contactEmail" typeRef="string" />
+      <output id="OutputClause_0g6x9e3" label="contactSms" name="contactSms" typeRef="string" />
+      <output id="OutputClause_0e8jrc6" label="contactChat" name="contactChat" typeRef="string" />
+      <rule id="DecisionRule_0u1oefa">
+        <inputEntry id="UnaryTests_0s5kok3">
+          <text>"chat:jane-doe", "email:jane-doe@email.com","sms:+12025556439"</text>
+        </inputEntry>
+        <outputEntry id="LiteralExpression_09o9bxf">
+          <text>"id_customer_1"</text>
+        </outputEntry>
+        <outputEntry id="LiteralExpression_0r7eor4">
+          <text>"Jane Doe"</text>
+        </outputEntry>
+        <outputEntry id="LiteralExpression_1jabum5">
+          <text>["email","sms","chat"]</text>
+        </outputEntry>
+        <outputEntry id="LiteralExpression_0vkxc1p">
+          <text>"jane-doe@email.com"</text>
+        </outputEntry>
+        <outputEntry id="LiteralExpression_0dv4qey">
+          <text>"+12025556439"</text>
+        </outputEntry>
+        <outputEntry id="LiteralExpression_0r5a762">
+          <text>"jane-doe"</text>
+        </outputEntry>
+      </rule>
+      <rule id="DecisionRule_1nssvak">
+        <inputEntry id="UnaryTests_0qs1xub">
+          <text>"chat:sam-miller", "email:sam-miller@web.com","sms:+18315555235"</text>
+        </inputEntry>
+        <outputEntry id="LiteralExpression_1uqbqqe">
+          <text>"id_customer_2"</text>
+        </outputEntry>
+        <outputEntry id="LiteralExpression_0ngr6z0">
+          <text>"Sam Miller"</text>
+        </outputEntry>
+        <outputEntry id="LiteralExpression_02xamn0">
+          <text>["email","sms","chat"]</text>
+        </outputEntry>
+        <outputEntry id="LiteralExpression_1jll0e5">
+          <text>"sam-miller@web.com"</text>
+        </outputEntry>
+        <outputEntry id="LiteralExpression_0e4br0e">
+          <text>"+18315555235"</text>
+        </outputEntry>
+        <outputEntry id="LiteralExpression_1qfu6d1">
+          <text>"sam-miller"</text>
+        </outputEntry>
+      </rule>
+    </decisionTable>
+  </decision>
+  <dmndi:DMNDI>
+    <dmndi:DMNDiagram>
+      <dmndi:DMNShape id="Decision_0544huu_di" dmnElementRef="customer-database">
+        <dc:Bounds height="80" width="180" x="160" y="100" />
+      </dmndi:DMNShape>
+    </dmndi:DMNDiagram>
+  </dmndi:DMNDI>
+</definitions>
