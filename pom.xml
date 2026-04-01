@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-parent</artifactId>
+    <version>4.0.5</version>
+    <relativePath/>
+  </parent>
+
+  <groupId>io.camunda.bizsol</groupId>
+  <artifactId>communication-agent</artifactId>
+  <version>1.0.0-SNAPSHOT</version>
+  <name>BizSol Communication Agent</name>
+
+  <properties>
+    <java.version>17</java.version>
+    <!-- Update to a stable release once Camunda 8.9.0 GA is published -->
+    <camunda.version>8.9.0-rc2</camunda.version>
+  </properties>
+
+  <dependencies>
+    <!-- Camunda Spring Boot Starter (provides CamundaClient, @Deployment, etc.) -->
+    <dependency>
+      <groupId>io.camunda</groupId>
+      <artifactId>camunda-spring-boot-starter</artifactId>
+      <version>${camunda.version}</version>
+      <scope>test</scope>
+    </dependency>
+
+    <!-- Camunda Process Test – Spring integration (@CamundaSpringProcessTest, CamundaAssert, …) -->
+    <dependency>
+      <groupId>io.camunda</groupId>
+      <artifactId>camunda-process-test-spring</artifactId>
+      <version>${camunda.version}</version>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <!--
+      Expose the BPMN/DMN diagrams from camunda-artifacts/ on the test classpath
+      under the path prefix "camunda-artifacts/", so @Deployment can find them.
+    -->
+    <testResources>
+      <testResource>
+        <directory>src/test/resources</directory>
+      </testResource>
+      <testResource>
+        <directory>camunda-artifacts</directory>
+        <targetPath>camunda-artifacts</targetPath>
+      </testResource>
+    </testResources>
+
+    <plugins>
+      <!--
+        CPT tests spin up Docker containers and can take a while:
+        run them as integration tests with the Failsafe plugin (mvn verify).
+      -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <configuration>
+          <excludes>
+            <exclude>**/*Test.java</exclude>
+          </excludes>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-failsafe-plugin</artifactId>
+        <configuration>
+          <includes>
+            <include>**/*Test.java</include>
+          </includes>
+        </configuration>
+        <executions>
+          <execution>
+            <goals>
+              <goal>integration-test</goal>
+              <goal>verify</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
+</project>
