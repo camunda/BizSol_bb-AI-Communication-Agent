@@ -35,12 +35,14 @@ The following overview shows the overall components of the Communication Agent b
 
 ### Connect to your AI provider
 
-In `communication-agent.bpmn` and in the two business agents (`business-agent-calculator.bpmn`, `business-agent-translator.bpmn`), you need to configure your AI provider in all AI tasks and sub-processes:
+In `communication-agent.bpmn` and in the two business agents (`business-agent-calculator.bpmn`, `business-agent-translator.bpmn`), you need to configure your AI provider. The models are pre-configured to use AWS Bedrock, so you can set the two environment variables `AWS_ACCESS_KEY` and `AWS_SECRET_KEY` to use the models as-is.
+
+If you want to use a different provider, go through the specified models and perform the following steps:
 
 1. Open the specific diagram and select the AI task / AI sub-process.
 2. Configure the **Model provider** section and...
    - add your provider details (e.g., provider `AWS Bedrock` in region `eu-west-1`), and
-   - add your credentials via Connector secrets (e.g., `{{ secrets.AWS_BEDROCK_ACCESS_KEY }}` for your AWS Bedrock access key).
+   - add your credentials via Connector secrets (e.g., `AWS_ACCESS_KEY` and `AWS_SECRET_KEY` for AWS Bedrock).
 3. Choose a suitable model (e.g., `global.anthropic.claude-sonnet-4-5-20250929-v1:0` on AWS Bedrock).
 
 ### (Optional) Customize the process models to suit your needs

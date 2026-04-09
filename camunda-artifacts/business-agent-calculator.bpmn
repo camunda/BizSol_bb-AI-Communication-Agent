@@ -18,8 +18,8 @@
           <zeebe:input source="bedrock" target="provider.type" />
           <zeebe:input source="eu-west-1" target="provider.bedrock.region" />
           <zeebe:input source="credentials" target="provider.bedrock.authentication.type" />
-          <zeebe:input source="{{ secrets.AWS_BEDROCK_ACCESS_KEY }}" target="provider.bedrock.authentication.accessKey" />
-          <zeebe:input source="{{ secrets.AWS_BEDROCK_SECRET_KEY }}" target="provider.bedrock.authentication.secretKey" />
+          <zeebe:input source="{{ secrets.AWS_ACCESS_KEY }}" target="provider.bedrock.authentication.accessKey" />
+          <zeebe:input source="{{ secrets.AWS_SECRET_KEY }}" target="provider.bedrock.authentication.secretKey" />
           <zeebe:input source="global.anthropic.claude-sonnet-4-5-20250929-v1:0" target="provider.bedrock.model.model" />
           <zeebe:input source="=&#34;You are a very specialized **Calculator Agent**. You will get a single message from a customer asking for a certain mathematical problem or problems to be solved. You should use your own domain knowledge to solve these problems. Be concise in your reply and do not ramble.&#10;&#10;You can send back exactly one message to the customer, which should be your single text output. Do not add any fluff. If you cannot solve a problem, reply with a short explanation why it is not possible to provide a reply.&#34;" target="data.systemPrompt.prompt" />
           <zeebe:input source="=customerMessage" target="data.userPrompt.prompt" />
