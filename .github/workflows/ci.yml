@@ -13,12 +13,31 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Java 17
-        uses: actions/setup-java@v4
+      - name: Set up JDK 25
+        uses: actions/setup-java@v5
         with:
-          java-version: "21"
+          java-version: "25"
           distribution: temurin
           cache: maven
 
+      - name: Import Secrets
+        id: secrets
+        uses: hashicorp/vault-action@v3.4.0
+        with:
+          url: ${{ secrets.VAULT_ADDR }}
+          method: approle
+          roleId: ${{ secrets.VAULT_ROLE_ID }}
+          secretId: ${{ secrets.VAULT_SECRET_ID }}
+          secrets: |
+            secret/data/products/solutions/aws_bedrock KEY | AWS_ACCESS_KEY;
+            secret/data/products/solutions/aws_bedrock SECRET | AWS_SECRET_KEY;
+
       - name: Run CPT tests
         run: mvn --batch-mode verify
+
+      - name: Upload failsafe reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: failsafe-reports
+          path: target/failsafe-reports
