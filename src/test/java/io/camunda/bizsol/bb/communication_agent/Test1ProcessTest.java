@@ -36,7 +36,7 @@ public class Test1ProcessTest {
     final ProcessInstanceEvent processInstance =
         client
             .newCreateInstanceCommand()
-            .bpmnProcessId("test-1")
+            .bpmnProcessId("CA_Test_001-Test_1")
             .latestVersion()
             .send()
             .join();
