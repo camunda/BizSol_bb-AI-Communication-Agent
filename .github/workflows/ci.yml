@@ -33,6 +33,10 @@ jobs:
             secret/data/products/solutions/aws_bedrock SECRET | AWS_SECRET_KEY;
 
       - name: Run CPT tests
+        env:
+          CAMUNDA_CONNECTOR_SECRETPROVIDER_ENVIRONMENT_PREFIX: ""
+          CONNECTOR_SECRET_AWS_ACCESS_KEY: ${{ steps.secrets.outputs.AWS_ACCESS_KEY }}
+          CONNECTOR_SECRET_AWS_SECRET_KEY: ${{ steps.secrets.outputs.AWS_SECRET_KEY }}
         run: mvn --batch-mode verify
 
       - name: Upload coverage reports
