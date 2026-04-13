@@ -7,7 +7,8 @@ import io.camunda.process.test.api.CamundaProcessTestContext;
 import io.camunda.process.test.api.CamundaSpringProcessTest;
 import java.time.Duration;
 import io.camunda.client.annotation.Deployment;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -20,7 +21,7 @@ import org.springframework.boot.test.context.SpringBootTest;
             "camunda.connector.secret-provider.environment.prefix="
         })
 @CamundaSpringProcessTest
-public class Test1ProcessTest {
+public class TestProcessCompletion {
 
   /**
    * Minimal Spring Boot application used exclusively by the test context.
@@ -37,20 +38,23 @@ public class Test1ProcessTest {
   @Autowired
   private CamundaProcessTestContext processTestContext;
 
-  @Test
-  void shouldCompleteTest1() {
-    // Start the test-1 process
+  @ParameterizedTest(name = "{0}")
+  @ValueSource(strings = {
+      "CA_Test_001-Test_1",
+      "CA_Test_010-Two_tasks",
+      "CA_Test_011-Two_parallel_tasks"
+  })
+  void shouldCompleteProcess(String processId) {
     final ProcessInstanceEvent processInstance =
         client
             .newCreateInstanceCommand()
-            .bpmnProcessId("CA_Test_001-Test_1")
+            .bpmnProcessId(processId)
             .latestVersion()
             .send()
             .join();
 
-    // Assert the process runs to completion
     CamundaAssert.assertThat(processInstance)
-        .withAssertionTimeout(Duration.ofMinutes(1))
+        .withAssertionTimeout(Duration.ofMinutes(2))
         .isCompleted();
   }
 }
