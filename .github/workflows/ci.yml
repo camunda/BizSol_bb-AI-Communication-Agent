@@ -1,0 +1,51 @@
+name: CI
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+
+jobs:
+  test:
+    name: CPT Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Set up JDK 25
+        uses: actions/setup-java@v5
+        with:
+          java-version: "25"
+          distribution: temurin
+          cache: maven
+
+      - name: Import Secrets
+        id: secrets
+        uses: hashicorp/vault-action@v3.4.0
+        with:
+          url: ${{ secrets.VAULT_ADDR }}
+          method: approle
+          roleId: ${{ secrets.VAULT_ROLE_ID }}
+          secretId: ${{ secrets.VAULT_SECRET_ID }}
+          secrets: |
+            secret/data/products/solutions/aws_bedrock KEY | AWS_ACCESS_KEY;
+            secret/data/products/solutions/aws_bedrock SECRET | AWS_SECRET_KEY;
+
+      - name: Run CPT tests
+        env:
+          CAMUNDA_CONNECTOR_SECRETPROVIDER_ENVIRONMENT_PREFIX: ""
+        run: mvn --batch-mode verify
+          -DAWS_ACCESS_KEY="${{ env.AWS_ACCESS_KEY }}"
+          -DAWS_SECRET_KEY="${{ env.AWS_SECRET_KEY }}"
+
+      - name: Upload coverage reports
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: coverage-reports
+          path: |
+            target/process-test-coverage/
+            target/coverage-report/
+            target/failsafe-reports/
+          retention-days: 7

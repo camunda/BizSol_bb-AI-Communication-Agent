@@ -1,0 +1,59 @@
+package io.camunda.bizsol.bb.communication_agent;
+
+import io.camunda.client.CamundaClient;
+import io.camunda.client.api.response.ProcessInstanceEvent;
+import io.camunda.process.test.api.CamundaAssert;
+import io.camunda.process.test.api.CamundaProcessTestContext;
+import io.camunda.process.test.api.CamundaSpringProcessTest;
+import java.time.Duration;
+import io.camunda.client.annotation.Deployment;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.test.context.SpringBootTest;
+
+@SpringBootTest(
+        properties = {
+            "camunda.process-test.connectors-enabled=true",
+            "camunda.process-test.connectors-secrets.AWS_ACCESS_KEY=${AWS_ACCESS_KEY:}",
+            "camunda.process-test.connectors-secrets.AWS_SECRET_KEY=${AWS_SECRET_KEY:}",
+            "camunda.connector.secret-provider.environment.prefix="
+        })
+@CamundaSpringProcessTest
+public class TestProcessCompletion {
+
+  /**
+   * Minimal Spring Boot application used exclusively by the test context.
+   * @Deployment deploys all Camunda artifacts found under camunda-artifacts/ on the classpath
+   * (populated from camunda-artifacts/ via Maven testResources) before each test method.
+   */
+  @SpringBootApplication
+  @Deployment(resources = {"classpath*:/camunda-artifacts/**/*.bpmn", "classpath*:/camunda-artifacts/**/*.dmn"})
+  static class TestApplication {}
+
+  @Autowired
+  private CamundaClient client;
+
+  @Autowired
+  private CamundaProcessTestContext processTestContext;
+
+  @ParameterizedTest(name = "{0}")
+  @ValueSource(strings = {
+      "CA_Test_001-Test_1",
+      "CA_Test_010-Two_tasks"
+  })
+  void shouldCompleteProcess(String processId) {
+    final ProcessInstanceEvent processInstance =
+        client
+            .newCreateInstanceCommand()
+            .bpmnProcessId(processId)
+            .latestVersion()
+            .send()
+            .join();
+
+    CamundaAssert.assertThat(processInstance)
+        .withAssertionTimeout(Duration.ofMinutes(2))
+        .isCompleted();
+  }
+}

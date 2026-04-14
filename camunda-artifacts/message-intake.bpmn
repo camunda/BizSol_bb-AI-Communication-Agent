@@ -1,0 +1,402 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:zeebe="http://camunda.org/schema/zeebe/1.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:modeler="http://camunda.org/schema/modeler/1.0" id="Definitions_0d9altk" targetNamespace="http://bpmn.io/schema/bpmn" exporter="Camunda Modeler" exporterVersion="5.44.0" modeler:executionPlatform="Camunda Cloud" modeler:executionPlatformVersion="8.9.0">
+  <bpmn:process id="message-intake" isExecutable="true">
+    <bpmn:businessRuleTask id="Activity_FindCustomerContext" name="Find customer context">
+      <bpmn:extensionElements>
+        <zeebe:ioMapping>
+          <zeebe:input source="=messageContext.channel + &#34;:&#34; + messageContext.from" target="lookupKey" />
+        </zeebe:ioMapping>
+        <zeebe:calledDecision decisionId="customer-database" resultVariable="customerContext" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_0kliake</bpmn:incoming>
+      <bpmn:outgoing>Flow_0fbmjga</bpmn:outgoing>
+      <bpmn:property id="Property_0wuxgoh" name="__targetRef_placeholder" />
+      <bpmn:dataInputAssociation id="DataInputAssociation_1srhckd">
+        <bpmn:sourceRef>DataStoreReference_CustomerDatabase</bpmn:sourceRef>
+        <bpmn:targetRef>Property_0wuxgoh</bpmn:targetRef>
+      </bpmn:dataInputAssociation>
+    </bpmn:businessRuleTask>
+    <bpmn:exclusiveGateway id="Gateway_CustomerFound" name="Customer found?" default="Flow_02qf9ba">
+      <bpmn:incoming>Flow_0fbmjga</bpmn:incoming>
+      <bpmn:outgoing>Flow_02qf9ba</bpmn:outgoing>
+      <bpmn:outgoing>Flow_0qkfpjz</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:sequenceFlow id="Flow_0fbmjga" sourceRef="Activity_FindCustomerContext" targetRef="Gateway_CustomerFound" />
+    <bpmn:sequenceFlow id="Flow_02qf9ba" name="No" sourceRef="Gateway_CustomerFound" targetRef="Event_CustomerUnknown" />
+    <bpmn:endEvent id="Event_CustomerUnknown" name="Customer is unknown">
+      <bpmn:incoming>Flow_02qf9ba</bpmn:incoming>
+      <bpmn:errorEventDefinition id="ErrorEventDefinition_0xw65xs" errorRef="Error_0ubdfmd" />
+    </bpmn:endEvent>
+    <bpmn:sequenceFlow id="Flow_0qkfpjz" name="Yes" sourceRef="Gateway_CustomerFound" targetRef="Event_PropagateMessageToCommAgent">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">=(customerContext.id != null)</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:exclusiveGateway id="Gateway_MergeIncomingMessages">
+      <bpmn:incoming>Flow_0x6ag44</bpmn:incoming>
+      <bpmn:incoming>Flow_1ekrcjb</bpmn:incoming>
+      <bpmn:incoming>Flow_0r3l9zy</bpmn:incoming>
+      <bpmn:incoming>Flow_0vlyq4h</bpmn:incoming>
+      <bpmn:outgoing>Flow_06hm0ui</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:startEvent id="Event_GenericMessageFromCustomer" name="Generic message from customer received">
+      <bpmn:extensionElements />
+      <bpmn:outgoing>Flow_1s22j9e</bpmn:outgoing>
+      <bpmn:messageEventDefinition id="MessageEventDefinition_0igtuud" messageRef="Message_3hgg72t" />
+    </bpmn:startEvent>
+    <bpmn:sequenceFlow id="Flow_1s22j9e" sourceRef="Event_GenericMessageFromCustomer" targetRef="Activity_ExtractMessageContextFromGenericMessage" />
+    <bpmn:sequenceFlow id="Flow_06hm0ui" sourceRef="Gateway_MergeIncomingMessages" targetRef="Gateway_MessageContextComplete" />
+    <bpmn:dataStoreReference id="DataStoreReference_CustomerDatabase" name="Customer database" />
+    <bpmn:sequenceFlow id="Flow_0x6ag44" sourceRef="Activity_ExtractMessageContextFromSms" targetRef="Gateway_MergeIncomingMessages" />
+    <bpmn:scriptTask id="Activity_ExtractMessageContextFromSms" name="Extract message context from SMS">
+      <bpmn:extensionElements>
+        <zeebe:script expression="={&#10;  channel: &#34;sms&#34;,&#10;  from: dummy_sms.request.body.From,&#10;  subject: &#34;&#34;,&#10;  message: dummy_sms.request.body.Body&#10;}" resultVariable="messageContext" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_00g6tn6</bpmn:incoming>
+      <bpmn:outgoing>Flow_0x6ag44</bpmn:outgoing>
+    </bpmn:scriptTask>
+    <bpmn:scriptTask id="Activity_ExtractMessageContextFromEmail" name="Extract message context from Email">
+      <bpmn:extensionElements>
+        <zeebe:script expression="={&#10;  channel: &#34;email&#34;,&#10;  from: dummy_email.fromAddress,&#10;  subject: dummy_email.subject,&#10;  message: dummy_email.plainTextBody&#10;}" resultVariable="messageContext" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_0odl2gn</bpmn:incoming>
+      <bpmn:outgoing>Flow_1ekrcjb</bpmn:outgoing>
+    </bpmn:scriptTask>
+    <bpmn:sequenceFlow id="Flow_1ekrcjb" sourceRef="Activity_ExtractMessageContextFromEmail" targetRef="Gateway_MergeIncomingMessages" />
+    <bpmn:scriptTask id="Activity_ExtractMessageContextFromGenericMessage" name="Extract message context from message">
+      <bpmn:extensionElements>
+        <zeebe:script expression="={&#10;  channel: testChannel,&#10;  from: testFrom,&#10;  subject: testSubject,&#10;  message: testMessage&#10;}" resultVariable="messageContext" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_1s22j9e</bpmn:incoming>
+      <bpmn:outgoing>Flow_0r3l9zy</bpmn:outgoing>
+    </bpmn:scriptTask>
+    <bpmn:sequenceFlow id="Flow_0r3l9zy" sourceRef="Activity_ExtractMessageContextFromGenericMessage" targetRef="Gateway_MergeIncomingMessages" />
+    <bpmn:exclusiveGateway id="Gateway_MessageContextComplete" name="Message context complete?" default="Flow_1olva75">
+      <bpmn:incoming>Flow_06hm0ui</bpmn:incoming>
+      <bpmn:outgoing>Flow_045luqa</bpmn:outgoing>
+      <bpmn:outgoing>Flow_1olva75</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:sequenceFlow id="Flow_045luqa" name="Yes" sourceRef="Gateway_MessageContextComplete" targetRef="Activity_RunAiFirewall">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">=messageContext.channel != null and
+not(is blank(messageContext.channel)) and
+messageContext.from != null and
+not(is blank(messageContext.from)) and
+messageContext.subject != null and
+messageContext.message != null and
+not(is blank(messageContext.from))</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_1olva75" name="No" sourceRef="Gateway_MessageContextComplete" targetRef="Event_MessageContextIncomplete" />
+    <bpmn:endEvent id="Event_MessageContextIncomplete" name="Message context is incomplete">
+      <bpmn:incoming>Flow_1olva75</bpmn:incoming>
+      <bpmn:errorEventDefinition id="ErrorEventDefinition_1828u5o" errorRef="Error_1coubrc" />
+    </bpmn:endEvent>
+    <bpmn:endEvent id="Event_PropagateMessageToCommAgent" name="Propagate message to communication agent" zeebe:modelerTemplate="io.camunda.connectors.message.end.v1" zeebe:modelerTemplateVersion="0" zeebe:modelerTemplateIcon="data:image/svg+xml;base64,PHN2ZwogICB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciCiAgIHdpZHRoPSIyMDAwIgogICBoZWlnaHQ9IjIwMDAiCiAgIHZpZXdCb3g9IjAgMCAyMDAwIDIwMDAiCiAgIHByZXNlcnZlQXNwZWN0UmF0aW89InhNaWRZTWlkIj4KICA8cGF0aAogICAgIHN0eWxlPSJjb2xvcjojMDAwMDAwIgogICAgIGQ9Im0gMCwyODQgMjAwMCwwIC0xMDAwLDU1NCB6Ii8+CiAgPHBhdGgKICAgICBzdHlsZT0iY29sb3I6IzAwMDAwMCIKICAgICBkPSJtIDAsNDUyIDEwMDAsNTQ4IDEwMDAsLTU0OCAwLDEwOTYgLTIwMDAsMCB6Ii8+Cjwvc3ZnPgo=">
+      <bpmn:extensionElements>
+        <zeebe:taskDefinition type="io.camunda:sendMessage:1" retries="3" />
+        <zeebe:ioMapping>
+          <zeebe:input source="message-intake-to-communication-agent" target="messageName" />
+          <zeebe:input source="=customerContext.id" target="correlationKey" />
+          <zeebe:input source="={&#10;  customerContext: customerContext,&#10;  messageContext: messageContext&#10;}" target="variables" />
+          <zeebe:input source="publish" target="correlationType.type" />
+        </zeebe:ioMapping>
+        <zeebe:taskHeaders>
+          <zeebe:header key="elementTemplateVersion" value="0" />
+          <zeebe:header key="elementTemplateId" value="io.camunda.connectors.message.v1" />
+          <zeebe:header key="retryBackoff" value="PT0S" />
+        </zeebe:taskHeaders>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_0qkfpjz</bpmn:incoming>
+      <bpmn:messageEventDefinition id="MessageEventDefinition_023w9db" />
+    </bpmn:endEvent>
+    <bpmn:sequenceFlow id="Flow_0kliake" sourceRef="Activity_RunAiFirewall" targetRef="Activity_FindCustomerContext" />
+    <bpmn:endEvent id="Event_MessageBlockedByAiFirewall" name="Message blocked by AI firewall">
+      <bpmn:incoming>Flow_0hzpji4</bpmn:incoming>
+      <bpmn:errorEventDefinition id="ErrorEventDefinition_1o5viv1" errorRef="Error_1qika3r" />
+    </bpmn:endEvent>
+    <bpmn:sequenceFlow id="Flow_0hzpji4" sourceRef="Event_EscalationFromAiFirewall" targetRef="Event_MessageBlockedByAiFirewall" />
+    <bpmn:scriptTask id="Activity_RunAiFirewall" name="Run AI firewall">
+      <bpmn:extensionElements>
+        <zeebe:script expression="=&#34;AI firewall executed&#34;" resultVariable="dummy_ai-firewall-result" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_045luqa</bpmn:incoming>
+      <bpmn:outgoing>Flow_0kliake</bpmn:outgoing>
+    </bpmn:scriptTask>
+    <bpmn:boundaryEvent id="Event_EscalationFromAiFirewall" name="AI firewall failed or message blocked" attachedToRef="Activity_RunAiFirewall">
+      <bpmn:outgoing>Flow_0hzpji4</bpmn:outgoing>
+      <bpmn:errorEventDefinition id="ErrorEventDefinition_1kq93mb" />
+    </bpmn:boundaryEvent>
+    <bpmn:startEvent id="Event_EmailFromCustomer" name="Email from customer received">
+      <bpmn:extensionElements />
+      <bpmn:outgoing>Flow_0odl2gn</bpmn:outgoing>
+      <bpmn:messageEventDefinition id="MessageEventDefinition_0ulhp56" messageRef="Message_3eaqmdq" />
+    </bpmn:startEvent>
+    <bpmn:sequenceFlow id="Flow_0odl2gn" sourceRef="Event_EmailFromCustomer" targetRef="Activity_ExtractMessageContextFromEmail" />
+    <bpmn:startEvent id="Event_SmsFromCustomer" name="SMS from customer received">
+      <bpmn:outgoing>Flow_00g6tn6</bpmn:outgoing>
+      <bpmn:messageEventDefinition id="MessageEventDefinition_1lzqn2i" messageRef="Message_104tvdo" />
+    </bpmn:startEvent>
+    <bpmn:sequenceFlow id="Flow_00g6tn6" sourceRef="Event_SmsFromCustomer" targetRef="Activity_ExtractMessageContextFromSms" />
+    <bpmn:startEvent id="Event_ChatFromCustomer" name="Chat from customer received">
+      <bpmn:outgoing>Flow_0oehmcv</bpmn:outgoing>
+      <bpmn:messageEventDefinition id="MessageEventDefinition_0e6curw" messageRef="Message_03nbod2" />
+    </bpmn:startEvent>
+    <bpmn:scriptTask id="Activity_ExtractMessageContextFromChat" name="Extract message context from chat">
+      <bpmn:extensionElements>
+        <zeebe:script expression="={&#10;  channel: &#34;chat&#34;,&#10;  from: dummy_chat.from,&#10;  subject: &#34;&#34;,&#10;  message: dummy_chat.message&#10;}" resultVariable="messageContext" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_0oehmcv</bpmn:incoming>
+      <bpmn:outgoing>Flow_0vlyq4h</bpmn:outgoing>
+    </bpmn:scriptTask>
+    <bpmn:sequenceFlow id="Flow_0oehmcv" sourceRef="Event_ChatFromCustomer" targetRef="Activity_ExtractMessageContextFromChat" />
+    <bpmn:sequenceFlow id="Flow_0vlyq4h" sourceRef="Activity_ExtractMessageContextFromChat" targetRef="Gateway_MergeIncomingMessages" />
+    <bpmn:group id="Group_1gexwym" categoryValueRef="CategoryValue_1dr13oj" />
+    <bpmn:textAnnotation id="TextAnnotation_1fjxz8m">
+      <bpmn:text>Match the incoming message to a unique customer record in your system (the customer context for this message)
+
+This will usually be done using service tasks and custom jobs or direct database access (e.g., SQL connector)
+
+The output must be a unique record identifier for the customer as well as contact details for all your required output channels (e.g., email address, phone number, etc.).</bpmn:text>
+    </bpmn:textAnnotation>
+    <bpmn:association id="Association_0n4u9c3" associationDirection="None" sourceRef="Activity_FindCustomerContext" targetRef="TextAnnotation_1fjxz8m" />
+    <bpmn:textAnnotation id="TextAnnotation_1lukjyb">
+      <bpmn:text>Secure your system by running all incoming messages against an AI firewall.
+
+Check the Camunda marketplace for a sample building block to swap in as a call activity:
+
+https://marketplace.camunda.com/en-US/apps/XXXXXX/ai-firewall-agent</bpmn:text>
+    </bpmn:textAnnotation>
+    <bpmn:association id="Association_10oc60f" associationDirection="None" sourceRef="Activity_RunAiFirewall" targetRef="TextAnnotation_1lukjyb" />
+    <bpmn:textAnnotation id="TextAnnotation_0yjr0oy">
+      <bpmn:text>Add your own input channels via custom connectors, e.g., Email or SMS via webhooks and external services.</bpmn:text>
+    </bpmn:textAnnotation>
+    <bpmn:association id="Association_01ila69" associationDirection="None" sourceRef="Group_1gexwym" targetRef="TextAnnotation_0yjr0oy" />
+  </bpmn:process>
+  <bpmn:error id="Error_0ubdfmd" name="message-intake-customer-unknown" errorCode="message-intake-customer-unknown" />
+  <bpmn:category id="Category_0m5cmw3">
+    <bpmn:categoryValue id="CategoryValue_1dr13oj" value="Message received from customer" />
+  </bpmn:category>
+  <bpmn:message id="Message_3hgg72t" name="message-customer-to-intake" />
+  <bpmn:error id="Error_1qika3r" name="message-intake-ai-firewall-failed" errorCode="message-intake-ai-firewall-failed" />
+  <bpmn:error id="Error_1coubrc" name="message-intake-message-incomplete" errorCode="message-intake-message-incomplete" />
+  <bpmn:error id="Error_0efbrtj" name="message-intake-message-suspicious" errorCode="message-intake-message-suspicious" />
+  <bpmn:message id="Message_3eaqmdq" name="dummy_email" />
+  <bpmn:message id="Message_104tvdo" name="dummy_sms" />
+  <bpmn:message id="Message_03nbod2" name="dummy_chat" />
+  <bpmndi:BPMNDiagram id="BPMNDiagram_1">
+    <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="message-intake">
+      <bpmndi:BPMNShape id="Activity_0aqg87u_di" bpmnElement="Activity_FindCustomerContext">
+        <dc:Bounds x="870" y="400" width="100" height="80" />
+        <bpmndi:BPMNLabel />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gateway_0dwk5ch_di" bpmnElement="Gateway_CustomerFound" isMarkerVisible="true">
+        <dc:Bounds x="1035" y="415" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1017" y="393" width="85" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Event_0iykrfq_di" bpmnElement="Event_CustomerUnknown">
+        <dc:Bounds x="1112" y="512" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1101" y="556" width="59" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gateway_0f5r35l_di" bpmnElement="Gateway_MergeIncomingMessages" isMarkerVisible="true">
+        <dc:Bounds x="415" y="415" width="50" height="50" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Event_1rwpukz_di" bpmnElement="Event_GenericMessageFromCustomer">
+        <dc:Bounds x="182" y="492" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="157" y="535" width="87" height="40" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="DataStoreReference_15fm7ad_di" bpmnElement="DataStoreReference_CustomerDatabase">
+        <dc:Bounds x="895" y="295" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="896" y="258" width="48" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_1arwgyy_di" bpmnElement="Activity_ExtractMessageContextFromSms">
+        <dc:Bounds x="280" y="230" width="100" height="80" />
+        <bpmndi:BPMNLabel />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="BPMNShape_1dkswp5" bpmnElement="Activity_ExtractMessageContextFromEmail">
+        <dc:Bounds x="280" y="130" width="100" height="80" />
+        <bpmndi:BPMNLabel />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="BPMNShape_0b0gln0" bpmnElement="Activity_ExtractMessageContextFromGenericMessage">
+        <dc:Bounds x="280" y="470" width="100" height="80" />
+        <bpmndi:BPMNLabel />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gateway_16zl1pi_di" bpmnElement="Gateway_MessageContextComplete" isMarkerVisible="true">
+        <dc:Bounds x="545" y="415" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="528" y="378" width="84" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Event_1664uan_di" bpmnElement="Event_MessageContextIncomplete">
+        <dc:Bounds x="612" y="512" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="588" y="555" width="84" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Event_0lsrotf_di" bpmnElement="Event_PropagateMessageToCommAgent">
+        <dc:Bounds x="1182" y="422" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1163" y="465" width="74" height="53" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="BPMNShape_1x1r96a" bpmnElement="Event_MessageBlockedByAiFirewall">
+        <dc:Bounds x="832" y="512" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="807" y="555" width="86" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_1fm1j73_di" bpmnElement="Activity_RunAiFirewall">
+        <dc:Bounds x="700" y="400" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Event_1jxifa1_di" bpmnElement="Event_EmailFromCustomer">
+        <dc:Bounds x="182" y="152" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="156" y="195" width="90" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="BPMNShape_05ydskv" bpmnElement="Event_SmsFromCustomer">
+        <dc:Bounds x="182" y="252" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="156" y="295" width="90" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="BPMNShape_0kx0ux2" bpmnElement="Event_ChatFromCustomer">
+        <dc:Bounds x="182" y="352" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="156" y="395" width="90" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="BPMNShape_1bako7q" bpmnElement="Activity_ExtractMessageContextFromChat">
+        <dc:Bounds x="280" y="330" width="100" height="80" />
+        <bpmndi:BPMNLabel />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Group_1gexwym_di" bpmnElement="Group_1gexwym">
+        <dc:Bounds x="140" y="80" width="260" height="360" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="225" y="87" width="90" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="TextAnnotation_1fjxz8m_di" bpmnElement="TextAnnotation_1fjxz8m">
+        <dc:Bounds x="1025" y="80" width="250" height="185" />
+        <bpmndi:BPMNLabel />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="TextAnnotation_1lukjyb_di" bpmnElement="TextAnnotation_1lukjyb">
+        <dc:Bounds x="690" y="80" width="270" height="127" />
+        <bpmndi:BPMNLabel />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="TextAnnotation_0yjr0oy_di" bpmnElement="TextAnnotation_0yjr0oy">
+        <dc:Bounds x="466" y="80" width="167" height="87" />
+        <bpmndi:BPMNLabel />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Event_0tn059s_di" bpmnElement="Event_EscalationFromAiFirewall">
+        <dc:Bounds x="782" y="462" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="701" y="490" width="78" height="40" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="DataInputAssociation_1srhckd_di" bpmnElement="DataInputAssociation_1srhckd">
+        <di:waypoint x="920" y="345" />
+        <di:waypoint x="920" y="400" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_0fbmjga_di" bpmnElement="Flow_0fbmjga">
+        <di:waypoint x="970" y="440" />
+        <di:waypoint x="1035" y="440" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_02qf9ba_di" bpmnElement="Flow_02qf9ba">
+        <di:waypoint x="1060" y="465" />
+        <di:waypoint x="1060" y="530" />
+        <di:waypoint x="1112" y="530" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1072" y="493" width="15" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_0qkfpjz_di" bpmnElement="Flow_0qkfpjz">
+        <di:waypoint x="1085" y="440" />
+        <di:waypoint x="1182" y="440" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1126" y="422" width="18" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_1s22j9e_di" bpmnElement="Flow_1s22j9e">
+        <di:waypoint x="218" y="510" />
+        <di:waypoint x="280" y="510" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_06hm0ui_di" bpmnElement="Flow_06hm0ui">
+        <di:waypoint x="465" y="440" />
+        <di:waypoint x="545" y="440" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_0x6ag44_di" bpmnElement="Flow_0x6ag44">
+        <di:waypoint x="380" y="270" />
+        <di:waypoint x="440" y="270" />
+        <di:waypoint x="440" y="415" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_1ekrcjb_di" bpmnElement="Flow_1ekrcjb">
+        <di:waypoint x="380" y="170" />
+        <di:waypoint x="440" y="170" />
+        <di:waypoint x="440" y="415" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_0r3l9zy_di" bpmnElement="Flow_0r3l9zy">
+        <di:waypoint x="380" y="510" />
+        <di:waypoint x="440" y="510" />
+        <di:waypoint x="440" y="465" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_045luqa_di" bpmnElement="Flow_045luqa">
+        <di:waypoint x="595" y="440" />
+        <di:waypoint x="700" y="440" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="639" y="422" width="18" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_1olva75_di" bpmnElement="Flow_1olva75">
+        <di:waypoint x="570" y="465" />
+        <di:waypoint x="570" y="530" />
+        <di:waypoint x="612" y="530" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="578" y="495" width="15" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_0kliake_di" bpmnElement="Flow_0kliake">
+        <di:waypoint x="800" y="440" />
+        <di:waypoint x="870" y="440" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_0hzpji4_di" bpmnElement="Flow_0hzpji4">
+        <di:waypoint x="800" y="498" />
+        <di:waypoint x="800" y="530" />
+        <di:waypoint x="832" y="530" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_0odl2gn_di" bpmnElement="Flow_0odl2gn">
+        <di:waypoint x="218" y="170" />
+        <di:waypoint x="280" y="170" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_00g6tn6_di" bpmnElement="Flow_00g6tn6">
+        <di:waypoint x="218" y="270" />
+        <di:waypoint x="280" y="270" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="BPMNEdge_051f530" bpmnElement="Flow_0oehmcv">
+        <di:waypoint x="218" y="370" />
+        <di:waypoint x="280" y="370" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_0vlyq4h_di" bpmnElement="Flow_0vlyq4h">
+        <di:waypoint x="380" y="370" />
+        <di:waypoint x="440" y="370" />
+        <di:waypoint x="440" y="415" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Association_0n4u9c3_di" bpmnElement="Association_0n4u9c3">
+        <di:waypoint x="938" y="400" />
+        <di:waypoint x="1025" y="208" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Association_10oc60f_di" bpmnElement="Association_10oc60f">
+        <di:waypoint x="750" y="400" />
+        <di:waypoint x="750" y="207" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Association_01ila69_di" bpmnElement="Association_01ila69">
+        <di:waypoint x="400" y="145" />
+        <di:waypoint x="466" y="116" />
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>
